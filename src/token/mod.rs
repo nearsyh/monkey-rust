@@ -27,6 +27,14 @@ pub struct Token<'a> {
   pub literal: &'a str
 }
 
+pub fn lookup_ident(ident: &str) -> TokenType {
+  return match ident {
+    "let" => TokenType::LET,
+    "fn" => TokenType::FUNCTION,
+    _ => TokenType::IDENT
+  }
+}
+
 impl<'a> Token<'a> {
   pub fn new(token_type: TokenType, literal: &'a str) -> Token<'a> {
     return Token { token_type: token_type, literal: literal };

@@ -1,10 +1,10 @@
-use super::token::{Token, TokenType};
+use super::token::{self, Token, TokenType};
 
 pub struct Lexer<'a> {
   input: &'a str,
   chars: std::str::Chars<'a>,
-  position: u32,
-  read_position: u32,
+  position: usize,
+  read_position: usize,
   ch: char
 }
 
@@ -21,7 +21,7 @@ impl<'a> Lexer<'a> {
   }
 
   fn read_char(&mut self) {
-    if self.read_position >= (self.input.len() as u32) {
+    if self.read_position >= self.input.len() {
       self.ch = '\0';
     } else {
       self.ch = self.chars.next().unwrap();
@@ -31,6 +31,7 @@ impl<'a> Lexer<'a> {
   }
 
   fn next_token(&mut self) -> Token<'a> {
+    self.skip_white_space();
     let tok = match self.ch {
       '=' => Token::new(TokenType::ASSIGN, "="),
       '+' => Token::new(TokenType::PLUS, "+"),
@@ -41,10 +42,42 @@ impl<'a> Lexer<'a> {
       '{' => Token::new(TokenType::LBRACE, "{"),
       '}' => Token::new(TokenType::RBRACE, "}"),
       '\0' => Token::new(TokenType::EOF, ""),
-      _ => Token::new(TokenType::ILLEGAL, "")
+      _ => {
+        if self.ch.is_alphabetic() {
+          let ident = self.read_identifier();
+          return Token::new(token::lookup_ident(ident), ident);
+        } else if self.ch.is_ascii_digit() {
+          let number = self.read_number();
+          return Token::new(TokenType::INT, number);
+        } else {
+          return Token::new(TokenType::ILLEGAL, &self.input[self.position..self.read_position]);
+        }
+      }
     };
     self.read_char();
     return tok;
+  }
+
+  fn read_number(&mut self) -> &'a str {
+    let start_position = self.position;
+    while self.ch.is_ascii_digit() {
+      self.read_char();
+    }
+    return &self.input[start_position..self.position];
+  }
+
+  fn read_identifier(&mut self) -> &'a str {
+    let start_position = self.position;
+    while self.ch.is_alphabetic() {
+      self.read_char();
+    }
+    return &self.input[start_position..self.position];
+  }
+
+  fn skip_white_space(&mut self) {
+    while self.ch.is_ascii_whitespace() {
+      self.read_char();
+    }
   }
 }
 
@@ -54,16 +87,49 @@ mod tests {
 
   #[test]
   fn test_next_token() {
-    let input = "=+(){},;";
+    let input = "let five = 5;
+    let ten = 10;
+    let add = fn(x, y) {
+      x + y;
+    };
+    let result = add(five, ten);";
 
     let tests = vec![
+      (TokenType::LET, "let"),
+      (TokenType::IDENT, "five"),
       (TokenType::ASSIGN, "="),
-      (TokenType::PLUS, "+"),
+      (TokenType::INT, "5"),
+      (TokenType::SEMICOLON, ";"),
+      (TokenType::LET, "let"),
+      (TokenType::IDENT, "ten"),
+      (TokenType::ASSIGN, "="),
+      (TokenType::INT, "10"),
+      (TokenType::SEMICOLON, ";"),
+      (TokenType::LET, "let"),
+      (TokenType::IDENT, "add"),
+      (TokenType::ASSIGN, "="),
+      (TokenType::FUNCTION, "fn"),
       (TokenType::LPAREN, "("),
+      (TokenType::IDENT, "x"),
+      (TokenType::COMMA, ","),
+      (TokenType::IDENT, "y"),
       (TokenType::RPAREN, ")"),
       (TokenType::LBRACE, "{"),
+      (TokenType::IDENT, "x"),
+      (TokenType::PLUS, "+"),
+      (TokenType::IDENT, "y"),
+      (TokenType::SEMICOLON, ";"),
       (TokenType::RBRACE, "}"),
+      (TokenType::SEMICOLON, ";"),
+      (TokenType::LET, "let"),
+      (TokenType::IDENT, "result"),
+      (TokenType::ASSIGN, "="),
+      (TokenType::IDENT, "add"),
+      (TokenType::LPAREN, "("),
+      (TokenType::IDENT, "five"),
       (TokenType::COMMA, ","),
+      (TokenType::IDENT, "ten"),
+      (TokenType::RPAREN, ")"),
       (TokenType::SEMICOLON, ";"),
       (TokenType::EOF, "")
     ];
@@ -73,8 +139,8 @@ mod tests {
     for i in 0..tests.len() {
       let tok = l.next_token();
       let (expected_type, expected_literal) = &tests[i];
-      assert_eq!(tok.token_type, *expected_type);
       assert_eq!(tok.literal, *expected_literal);
+      assert_eq!(tok.token_type, *expected_type);
     }
   }
 }
