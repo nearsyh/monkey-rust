@@ -9,7 +9,7 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-  fn new(input: &'a str) -> Lexer<'a> {
+  pub fn new(input: &'a str) -> Lexer<'a> {
     let mut ret = Lexer {
       input: input, 
       chars: input.chars(), 
@@ -38,7 +38,7 @@ impl<'a> Lexer<'a> {
     }
   }
 
-  fn next_token(&mut self) -> Token<'a> {
+  pub fn next_token(&mut self) -> Token<'a> {
     self.skip_white_space();
     let tok = match self.ch {
       '=' => {
