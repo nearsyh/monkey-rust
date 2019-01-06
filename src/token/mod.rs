@@ -16,6 +16,8 @@ pub enum TokenType {
 
   LT,
   GT,
+  EQ,
+  NEQ,
   
   COMMA,
   SEMICOLON,
@@ -26,7 +28,12 @@ pub enum TokenType {
   RBRACE,
 
   FUNCTION,
-  LET
+  LET,
+  TRUE,
+  FALSE,
+  IF,
+  ELSE,
+  RETURN
 }
 
 pub struct Token<'a> {
@@ -38,6 +45,11 @@ pub fn lookup_ident(ident: &str) -> TokenType {
   return match ident {
     "let" => TokenType::LET,
     "fn" => TokenType::FUNCTION,
+    "true" => TokenType::TRUE,
+    "false" => TokenType::FALSE,
+    "if" => TokenType::IF,
+    "else" => TokenType::ELSE,
+    "return" => TokenType::RETURN,
     _ => TokenType::IDENT
   }
 }

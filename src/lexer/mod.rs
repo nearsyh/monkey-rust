@@ -30,13 +30,35 @@ impl<'a> Lexer<'a> {
     self.read_position += 1;
   }
 
+  fn peek_char(&mut self) -> char {
+    if self.read_position >= self.input.len() {
+      return '\0';
+    } else {
+      return self.input[self.read_position..].chars().next().unwrap();
+    }
+  }
+
   fn next_token(&mut self) -> Token<'a> {
     self.skip_white_space();
     let tok = match self.ch {
-      '=' => Token::new(TokenType::ASSIGN, "="),
+      '=' => {
+        if self.peek_char() == '=' {
+          self.read_char();
+          Token::new(TokenType::EQ, "==")
+        } else {
+          Token::new(TokenType::ASSIGN, "=")
+        }
+      },
       '+' => Token::new(TokenType::PLUS, "+"),
       '-' => Token::new(TokenType::MINUS, "-"),
-      '!' => Token::new(TokenType::BANG, "!"),
+      '!' => {
+        if self.peek_char() == '=' {
+          self.read_char();
+          Token::new(TokenType::NEQ, "!=")
+        } else {
+          Token::new(TokenType::BANG, "!")
+        }
+      },
       '*' => Token::new(TokenType::ASTERISK, "*"),
       '/' => Token::new(TokenType::SLASH, "/"),
       '<' => Token::new(TokenType::LT, "<"),
@@ -51,12 +73,12 @@ impl<'a> Lexer<'a> {
       _ => {
         if self.ch.is_alphabetic() {
           let ident = self.read_identifier();
-          return Token::new(token::lookup_ident(ident), ident);
+          return Token::new(token::lookup_ident(ident), ident)
         } else if self.ch.is_ascii_digit() {
           let number = self.read_number();
-          return Token::new(TokenType::INT, number);
+          return Token::new(TokenType::INT, number)
         } else {
-          return Token::new(TokenType::ILLEGAL, &self.input[self.position..self.read_position]);
+          Token::new(TokenType::ILLEGAL, &self.input[self.position..self.read_position])
         }
       }
     };
@@ -100,7 +122,16 @@ mod tests {
     };
     let result = add(five, ten);
     !-/*5;
-    5 < 10 > 5;";
+    5 < 10 > 5;
+    
+    if (5 < 10) {
+      return true;
+    } else {
+      return false;
+    }
+    
+    10 == 10;
+    10 != 9;";
 
     let tests = vec![
       (TokenType::LET, "let"),
@@ -150,6 +181,31 @@ mod tests {
       (TokenType::INT, "10"),
       (TokenType::GT, ">"),
       (TokenType::INT, "5"),
+      (TokenType::SEMICOLON, ";"),
+      (TokenType::IF, "if"),
+      (TokenType::LPAREN, "("),
+      (TokenType::INT, "5"),
+      (TokenType::LT, "<"),
+      (TokenType::INT, "10"),
+      (TokenType::RPAREN, ")"),
+      (TokenType::LBRACE, "{"),
+      (TokenType::RETURN, "return"),
+      (TokenType::TRUE, "true"),
+      (TokenType::SEMICOLON, ";"),
+      (TokenType::RBRACE, "}"),
+      (TokenType::ELSE, "else"),
+      (TokenType::LBRACE, "{"),
+      (TokenType::RETURN, "return"),
+      (TokenType::FALSE, "false"),
+      (TokenType::SEMICOLON, ";"),
+      (TokenType::RBRACE, "}"),
+      (TokenType::INT, "10"),
+      (TokenType::EQ, "=="),
+      (TokenType::INT, "10"),
+      (TokenType::SEMICOLON, ";"),
+      (TokenType::INT, "10"),
+      (TokenType::NEQ, "!="),
+      (TokenType::INT, "9"),
       (TokenType::SEMICOLON, ";"),
       (TokenType::EOF, "")
     ];
